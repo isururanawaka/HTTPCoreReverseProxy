@@ -11,6 +11,7 @@ import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.nio.NHttpClientEventHandler;
 import org.apache.http.nio.NHttpServerConnection;
+import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.nio.util.HeapByteBufferAllocator;
 import org.apache.http.nio.util.SharedInputBuffer;
 import org.apache.http.nio.util.SharedOutputBuffer;
@@ -40,6 +41,11 @@ public class TargetHandler implements NHttpClientEventHandler {
 
     @Override
     public void requestReady(NHttpClientConnection nHttpClientConnection) throws IOException, HttpException {
+
+        if(nHttpClientConnection.getContext().removeAttribute(IOSession.ATTACHMENT_KEY) == null){
+            return;
+        }
+
         Message message = (Message) nHttpClientConnection.getContext().getAttribute(Constants.MESSAGE);
         HttpRequest httpRequest = message.getHttpRequest();
         httpRequest.removeHeaders("Connection");
@@ -48,6 +54,8 @@ public class TargetHandler implements NHttpClientEventHandler {
         nHttpClientConnection.submitRequest(httpRequest);
         Pipe pipe = message.getRequestPipe();
         pipe.attachConsumer(nHttpClientConnection);
+
+        nHttpClientConnection.getContext().removeAttribute(IOSession.ATTACHMENT_KEY);
 
     }
 
